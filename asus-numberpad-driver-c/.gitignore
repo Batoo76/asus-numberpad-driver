@@ -1,0 +1,17 @@
+# Build artifacts
+obj/
+bin/
+*.o
+*.a
+*.so
+
+# Editor files
+*.swp
+*~
+.vscode/
+.idea/
+
+# Debug files
+*.dSYM/
+vgcore.*
+
