@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <time.h>
 #include <math.h>
+#include <linux/input.h>
 #include "numberpad.h"
 
 /* Global state */
@@ -190,62 +191,154 @@ int numberpad_run(void) {
         }
 
         g_touchpad.last_event_time = time(NULL);
+        int slot = g_mt.current_slot;
+        int x = g_mt.x_values[slot];
+        int y = g_mt.y_values[slot];
+        int prev_x = g_mt.x_previous_values[slot];
+        int prev_y = g_mt.y_previous_values[slot];
+
+        /* Process ABS_MT_SLOT */
+        if (ev.type == EV_ABS && ev.code == ABS_MT_SLOT) {
+            if (ev.value < MAX_MT_SLOTS) {
+                g_mt.current_slot = ev.value;
+                slot = ev.value;
+            }
+            continue;
+        }
+
+        /* Process ABS_MT_TRACKING_ID */
+        if (ev.type == EV_ABS && ev.code == ABS_MT_TRACKING_ID) {
+            if (ev.value >= 0) {
+                /* Finger down - initialize position */
+                if (g_mt.x_init_values[slot] == -1) {
+                    g_mt.x_init_values[slot] = x;
+                    g_mt.y_init_values[slot] = y;
+                }
+            } else {
+                /* Finger lifted */
+                if (g_config.press_key_when_is_done_untouch && key_pressed && current_key >= 0) {
+                    /* Send key on release */
+                    send_key_event(current_key, 1);
+                    send_key_event(current_key, 0);
+                } else if (key_pressed && current_key >= 0) {
+                    send_key_event(current_key, 0);
+                }
+                key_pressed = false;
+                current_key = -1;
+                reset_current_mt_slot();
+            }
+            continue;
+        }
+
+        /* Process MSC_TIMESTAMP - check for activation */
+        if (ev.type == EV_MSC && ev.code == MSC_TIMESTAMP) {
+            /* Check top-right icon (numlock) activation */
+            if (is_pressed_top_right_icon(x, y) && takes_numlock_longer_than_activation_time()) {
+                toggle_numlock();
+                g_mt.numlock_touch_start_time = 0;
+                g_mt.top_right_icon_touch_start_time = 0;
+                continue;
+            }
+
+            /* Check top-left icon (brightness) activation */
+            if (g_touchpad.numlock && is_pressed_top_left_icon(x, y) &&
+                takes_top_left_icon_longer_than_activation_time() &&
+                !g_config.top_left_icon_brightness_func_disabled &&
+                g_layout.backlight_levels_count > 0) {
+                increase_brightness();
+                continue;
+            }
+        }
 
         /* Process ABS_MT_POSITION_X */
         if (ev.type == EV_ABS && ev.code == ABS_MT_POSITION_X) {
-            g_mt.x_values[g_mt.current_slot] = ev.value;
+            /* Save previous value */
+            g_mt.x_previous_values[slot] = g_mt.x_values[slot];
+            g_mt.x_values[slot] = ev.value;
+            x = ev.value;
 
-            /* Check if we're in numpad area and numlock is enabled */
+            /* Check for slide gestures */
+            if (is_slided_from_top_right_icon(x, y, prev_x, prev_y)) {
+                toggle_numlock();
+                continue;
+            }
+
+            if (is_slided_from_top_left_icon(x, y, prev_x, prev_y)) {
+                /* TODO: Handle top-left slide (calculator function) */
+                syslog(LOG_DEBUG, "Top-left icon slide gesture detected");
+                continue;
+            }
+
+            /* Check if touching top-right icon */
+            if (is_pressed_top_right_icon(x, y)) {
+                if (g_mt.top_right_icon_touch_start_time == 0) {
+                    g_mt.top_right_icon_touch_start_time = time(NULL);
+                    g_mt.numlock_touch_start_time = time(NULL);
+                    syslog(LOG_DEBUG, "Touched top-right icon");
+                }
+            }
+
+            /* Check if touching top-left icon */
+            if (is_pressed_top_left_icon(x, y)) {
+                if (g_mt.top_left_icon_touch_start_time == 0) {
+                    g_mt.top_left_icon_touch_start_time = time(NULL);
+                    syslog(LOG_DEBUG, "Touched top-left icon");
+                }
+            }
+
+            /* Process numpad keys if numlock is enabled */
             if (g_touchpad.numlock) {
-                int key = get_touched_key(ev.value, g_mt.y_values[g_mt.current_slot]);
+                int key = get_touched_key(ev.value, y);
                 if (key >= 0 && key != current_key) {
                     /* New key touched */
                     if (key_pressed && current_key >= 0) {
-                        /* Release previous key */
                         send_key_event(current_key, 0);
                     }
                     current_key = key;
                     key_pressed = true;
-                    send_key_event(current_key, 1);
+                    if (g_config.press_key_when_is_done_untouch) {
+                        /* Don't send key yet, wait for release */
+                    } else {
+                        send_key_event(current_key, 1);
+                    }
                 }
             }
         }
         /* Process ABS_MT_POSITION_Y */
         else if (ev.type == EV_ABS && ev.code == ABS_MT_POSITION_Y) {
-            g_mt.y_values[g_mt.current_slot] = ev.value;
+            /* Save previous value */
+            g_mt.y_previous_values[slot] = g_mt.y_values[slot];
+            g_mt.y_values[slot] = ev.value;
+            y = ev.value;
 
+            /* Check for slide gestures */
+            if (is_slided_from_top_right_icon(x, y, prev_x, prev_y)) {
+                toggle_numlock();
+                continue;
+            }
+
+            if (is_slided_from_top_left_icon(x, y, prev_x, prev_y)) {
+                /* TODO: Handle top-left slide (calculator function) */
+                syslog(LOG_DEBUG, "Top-left icon slide gesture detected");
+                continue;
+            }
+
+            /* Process numpad keys if numlock is enabled */
             if (g_touchpad.numlock) {
-                int key = get_touched_key(g_mt.x_values[g_mt.current_slot], ev.value);
+                int key = get_touched_key(x, ev.value);
                 if (key >= 0 && key != current_key) {
                     if (key_pressed && current_key >= 0) {
                         send_key_event(current_key, 0);
                     }
                     current_key = key;
                     key_pressed = true;
-                    send_key_event(current_key, 1);
+                    if (g_config.press_key_when_is_done_untouch) {
+                        /* Don't send key yet, wait for release */
+                    } else {
+                        send_key_event(current_key, 1);
+                    }
                 }
             }
-        }
-        /* Process ABS_MT_SLOT */
-        else if (ev.type == EV_ABS && ev.code == ABS_MT_SLOT) {
-            if (ev.value < MAX_MT_SLOTS) {
-                g_mt.current_slot = ev.value;
-            }
-        }
-        /* Process ABS_MT_TRACKING_ID */
-        else if (ev.type == EV_ABS && ev.code == ABS_MT_TRACKING_ID) {
-            if (ev.value < 0) {
-                /* Finger lifted */
-                if (key_pressed && current_key >= 0) {
-                    send_key_event(current_key, 0);
-                    key_pressed = false;
-                    current_key = -1;
-                }
-            }
-        }
-        /* Process EV_KEY for top-right icon (numlock activation) */
-        else if (ev.type == EV_KEY && ev.code == KEY_NUMLOCK) {
-            /* TODO: Implement numlock toggle logic */
         }
     }
 

@@ -61,14 +61,18 @@ int detect_devices(int *touchpad_event_num, char *touchpad_name, size_t name_len
                     char *name_end = strchr(name_start, '"');
                     if (name_end) {
                         size_t name_size = name_end - name_start;
-                        if (name_size < name_len - 1) {
+                        /* Check: name_size + 1 (for null terminator) <= name_len
+                         * Equivalent to: name_size < name_len - 1 (when name_len > 0)
+                         * This ensures we have room for the null terminator */
+                        if (name_len > 0 && name_size < name_len - 1) {
                             strncpy(touchpad_name, name_start, name_size);
                             touchpad_name[name_size] = '\0';
                         } else if (name_len > 0) {
-                            /* Truncate if name is too long */
+                            /* Truncate if name is too long - copy name_len-1 chars + null terminator */
                             strncpy(touchpad_name, name_start, name_len - 1);
                             touchpad_name[name_len - 1] = '\0';
                         }
+                        /* If name_len == 0, buffer is too small, skip extraction */
                     }
                 }
 

@@ -126,5 +126,16 @@ int config_save(const char *config_file, const config_t *config);
 /* I2C */
 int i2c_send_value(int device_id, int device_addr, uint8_t value);
 
+/* Touchpad gestures and icon detection */
+bool is_pressed_top_right_icon(int x, int y);
+bool is_pressed_top_left_icon(int x, int y);
+bool takes_numlock_longer_than_activation_time(void);
+bool takes_top_left_icon_longer_than_activation_time(void);
+bool is_slided_from_top_right_icon(int x, int y, int prev_x, int prev_y);
+bool is_slided_from_top_left_icon(int x, int y, int prev_x, int prev_y);
+void reset_current_mt_slot(void);
+void toggle_numlock(void);
+void increase_brightness(void);
+
 #endif /* NUMBERPAD_H */
 
