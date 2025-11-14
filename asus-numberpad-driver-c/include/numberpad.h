@@ -137,5 +137,11 @@ void reset_current_mt_slot(void);
 void toggle_numlock(void);
 void increase_brightness(void);
 
+/* Debug functions */
+void debug_init(void);
+void debug_log(int priority, const char *format, ...);
+void debug_print_state(void);
+void debug_print_event(const struct input_event *ev);
+
 #endif /* NUMBERPAD_H */
 

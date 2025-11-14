@@ -197,6 +197,9 @@ int numberpad_run(void) {
         int prev_x = g_mt.x_previous_values[slot];
         int prev_y = g_mt.y_previous_values[slot];
 
+        /* Print event in debug mode */
+        debug_print_event(&ev);
+
         /* Process ABS_MT_SLOT */
         if (ev.type == EV_ABS && ev.code == ABS_MT_SLOT) {
             if (ev.value < MAX_MT_SLOTS) {

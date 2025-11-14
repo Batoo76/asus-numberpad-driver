@@ -45,26 +45,32 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, signal_handler);
     signal(SIGUSR1, signal_handler);
 
+    /* Initialize debug logging first */
+    debug_init();
+
     /* Open syslog */
     openlog("asus-numberpad-driver", LOG_PID | LOG_CONS, LOG_USER);
-    syslog(LOG_INFO, "Starting ASUS NumberPad driver (C version)");
+    debug_log(LOG_INFO, "Starting ASUS NumberPad driver (C version)");
 
     /* Initialize driver */
     if (numberpad_init(layout_name, config_dir) != 0) {
-        syslog(LOG_ERR, "Failed to initialize driver");
+        debug_log(LOG_ERR, "Failed to initialize driver");
         closelog();
         return 1;
     }
 
+    /* Print initial state in debug mode */
+    debug_print_state();
+
     /* Run main loop */
-    syslog(LOG_INFO, "Driver initialized, entering main loop");
+    debug_log(LOG_INFO, "Driver initialized, entering main loop");
     if (numberpad_run() != 0) {
-        syslog(LOG_ERR, "Driver error in main loop");
+        debug_log(LOG_ERR, "Driver error in main loop");
     }
 
     /* Cleanup */
     numberpad_cleanup();
-    syslog(LOG_INFO, "Driver stopped");
+    debug_log(LOG_INFO, "Driver stopped");
     closelog();
 
     return 0;
