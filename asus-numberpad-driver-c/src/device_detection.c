@@ -6,8 +6,7 @@
 #include <regex.h>
 #include <errno.h>
 #include <syslog.h>
-#include <libevdev/libevdev.h>
-#include <linux/input.h>
+#include <libevdev-1.0/libevdev/libevdev.h>
 #include "numberpad.h"
 
 #define MAX_LINE_LEN 512
@@ -62,9 +61,13 @@ int detect_devices(int *touchpad_event_num, char *touchpad_name, size_t name_len
                     char *name_end = strchr(name_start, '"');
                     if (name_end) {
                         size_t name_size = name_end - name_start;
-                        if (name_size < name_len) {
+                        if (name_size < name_len - 1) {
                             strncpy(touchpad_name, name_start, name_size);
                             touchpad_name[name_size] = '\0';
+                        } else if (name_len > 0) {
+                            /* Truncate if name is too long */
+                            strncpy(touchpad_name, name_start, name_len - 1);
+                            touchpad_name[name_len - 1] = '\0';
                         }
                     }
                 }

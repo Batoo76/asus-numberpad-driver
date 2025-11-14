@@ -48,7 +48,7 @@ fallback_i2ctransfer:
         int i;
 
         /* Build hex data string */
-        for (i = 0; i < sizeof(data); i++) {
+        for (i = 0; i < (int)sizeof(data); i++) {
             char hex[8];
             snprintf(hex, sizeof(hex), "0x%02x ", data[i]);
             strcat(hex_data, hex);

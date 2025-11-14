@@ -11,12 +11,13 @@ This is an initial conversion project. The following components are implemented:
 - ✅ Project structure and build system
 - ✅ Configuration file parsing
 - ✅ I2C communication (with fallback to i2ctransfer)
-- ⏳ Input device handling (libevdev)
-- ⏳ uinput virtual device creation
-- ⏳ Touchpad event processing
+- ✅ Input device handling (libevdev)
+- ✅ uinput virtual device creation
+- ✅ Touchpad event processing (basic)
+- ✅ Layout loading (hardcoded up5401ea layout)
+- ✅ Main event loop (basic touch-to-key mapping)
 - ⏳ X11/Wayland support
-- ⏳ Layout loading
-- ⏳ Main event loop
+- ⏳ Advanced features (gestures, numlock activation, etc.)
 
 ## Building
 

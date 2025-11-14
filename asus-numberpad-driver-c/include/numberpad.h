@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <linux/input.h>
 
 /* Configuration structure */
 typedef struct {

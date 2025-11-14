@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -g -std=c11 -D_GNU_SOURCE
-LDFLAGS = -levdev -lX11 -lwayland-client -lxkbcommon -lsystemd -lpthread -lm
+CFLAGS = -Wall -Wextra -O2 -g -std=c11 -D_GNU_SOURCE $(shell pkg-config --cflags libevdev 2>/dev/null || echo "")
+LDFLAGS = $(shell pkg-config --libs libevdev 2>/dev/null || echo "-levdev") -lX11 -lwayland-client -lxkbcommon -lsystemd -lpthread -lm
 
 # Directories
 SRCDIR = src

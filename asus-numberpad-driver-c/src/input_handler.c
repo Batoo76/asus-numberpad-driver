@@ -5,27 +5,20 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <syslog.h>
-#include <libevdev/libevdev.h>
-#include <libevdev/libevdev-uinput.h>
-#include <linux/input.h>
+#include <libevdev-1.0/libevdev/libevdev.h>
+#include <libevdev-1.0/libevdev/libevdev-uinput.h>
 #include <linux/uinput.h>
 #include "numberpad.h"
 
 static struct libevdev *g_touchpad_dev = NULL;
 static struct libevdev_uinput *g_uinput_dev = NULL;
 
-/* Enable a key on the uinput device */
+/* Note: Keys are enabled when creating the uinput device.
+ * This function is kept for API compatibility but doesn't need to do anything
+ * since we enable all needed keys during device creation.
+ */
 int enable_uinput_key(unsigned int keycode) {
-    if (!g_uinput_dev) {
-        return -1;
-    }
-
-    struct libevdev *dev = libevdev_uinput_get_dev(g_uinput_dev);
-    if (libevdev_enable_event_code(dev, EV_KEY, keycode, NULL) != 0) {
-        syslog(LOG_ERR, "Failed to enable key %u", keycode);
-        return -1;
-    }
-
+    (void)keycode; /* Unused for now */
     return 0;
 }
 
