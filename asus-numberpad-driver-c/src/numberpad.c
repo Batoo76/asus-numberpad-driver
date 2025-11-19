@@ -202,7 +202,7 @@ int numberpad_run(void) {
 
         /* Process ABS_MT_SLOT */
         if (ev.type == EV_ABS && ev.code == ABS_MT_SLOT) {
-            if (ev.value < MAX_MT_SLOTS) {
+            if (ev.value >= 0 && ev.value < MAX_MT_SLOTS) {
                 g_mt.current_slot = ev.value;
                 slot = ev.value;
             }
@@ -212,11 +212,9 @@ int numberpad_run(void) {
         /* Process ABS_MT_TRACKING_ID */
         if (ev.type == EV_ABS && ev.code == ABS_MT_TRACKING_ID) {
             if (ev.value >= 0) {
-                /* Finger down - initialize position */
-                if (g_mt.x_init_values[slot] == -1) {
-                    g_mt.x_init_values[slot] = x;
-                    g_mt.y_init_values[slot] = y;
-                }
+                /* Finger down - reset initial coordinates to capture first real positions */
+                g_mt.x_init_values[slot] = -1;
+                g_mt.y_init_values[slot] = -1;
             } else {
                 /* Finger lifted */
                 if (g_config.press_key_when_is_done_untouch && key_pressed && current_key >= 0) {
@@ -259,6 +257,10 @@ int numberpad_run(void) {
             g_mt.x_previous_values[slot] = g_mt.x_values[slot];
             g_mt.x_values[slot] = ev.value;
             x = ev.value;
+
+            if (g_mt.x_init_values[slot] == -1) {
+                g_mt.x_init_values[slot] = ev.value;
+            }
 
             /* Check for slide gestures */
             if (is_slided_from_top_right_icon(x, y, prev_x, prev_y)) {
@@ -313,6 +315,10 @@ int numberpad_run(void) {
             g_mt.y_previous_values[slot] = g_mt.y_values[slot];
             g_mt.y_values[slot] = ev.value;
             y = ev.value;
+
+            if (g_mt.y_init_values[slot] == -1) {
+                g_mt.y_init_values[slot] = ev.value;
+            }
 
             /* Check for slide gestures */
             if (is_slided_from_top_right_icon(x, y, prev_x, prev_y)) {

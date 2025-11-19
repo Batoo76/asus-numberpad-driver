@@ -102,9 +102,7 @@ bool is_slided_from_top_right_icon(int x, int y, int prev_x, int prev_y) {
     double radius_squared = g_config.top_right_icon_slide_func_activation_radius *
                            g_config.top_right_icon_slide_func_activation_radius;
 
-    if (dx > g_config.top_right_icon_slide_func_activation_radius ||
-        dy > g_config.top_right_icon_slide_func_activation_radius ||
-        distance_squared > radius_squared) {
+    if (distance_squared > radius_squared) {
         syslog(LOG_INFO, "Slide from top-right icon exceeded activation threshold (radius: %d)",
                g_config.top_right_icon_slide_func_activation_radius);
         g_mt.top_right_icon_touch_start_time = 0;
@@ -143,9 +141,7 @@ bool is_slided_from_top_left_icon(int x, int y, int prev_x, int prev_y) {
     double radius_squared = g_config.top_left_icon_slide_func_activation_radius *
                            g_config.top_left_icon_slide_func_activation_radius;
 
-    if (x > g_config.top_left_icon_slide_func_activation_radius ||
-        y > g_config.top_left_icon_slide_func_activation_radius ||
-        distance_squared > radius_squared) {
+    if (distance_squared > radius_squared) {
         syslog(LOG_INFO, "Slide from top-left icon exceeded activation threshold (radius: %d)",
                g_config.top_left_icon_slide_func_activation_radius);
         g_mt.top_left_icon_touch_start_time = 0;
